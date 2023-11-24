@@ -394,11 +394,28 @@ func (server *NacosServer) InjectSign(request rpc_request.IRequest, param map[st
 	param["ak"] = clientConfig.AccessKey
 }
 
+func fixIPv6Host(fullAddress string) string {
+	if strings.Contains(fullAddress, "[") {
+		return fullAddress
+	}
+
+	if !strings.Contains(fullAddress, ":") {
+		return fullAddress
+	}
+
+	parts := strings.Split(fullAddress, "//")
+	if len(parts) == 1 {
+		return "[" + fullAddress + "]"
+	}
+
+	return parts[0] + "//[" + parts[1] + "]"
+}
+
 func getAddress(cfg constant.ServerConfig) string {
 	if strings.Index(cfg.IpAddr, "http://") >= 0 || strings.Index(cfg.IpAddr, "https://") >= 0 {
-		return cfg.IpAddr + ":" + strconv.Itoa(int(cfg.Port))
+		return fixIPv6Host(cfg.IpAddr) + ":" + strconv.Itoa(int(cfg.Port))
 	}
-	return cfg.Scheme + "://" + cfg.IpAddr + ":" + strconv.Itoa(int(cfg.Port))
+	return cfg.Scheme + "://" + fixIPv6Host(cfg.IpAddr) + ":" + strconv.Itoa(int(cfg.Port))
 }
 
 func GetSignHeadersFromRequest(cr rpc_request.IConfigRequest, secretKey string) map[string]string {
