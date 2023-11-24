@@ -101,6 +101,23 @@ func (ac *AuthClient) Login() (bool, error) {
 	return false, throwable
 }
 
+func fixIPv6Host(fullAddress string) string {
+	if strings.Contains(fullAddress, "[") {
+		return fullAddress
+	}
+
+	if !strings.Contains(fullAddress, ":") {
+		return fullAddress
+	}
+
+	parts := strings.Split(fullAddress, "//")
+	if len(parts) == 1 {
+		return "[" + fullAddress + "]"
+	}
+
+	return parts[0] + "//[" + parts[1] + "]"
+}
+
 func (ac *AuthClient) login(server constant.ServerConfig) (bool, error) {
 	if ac.username != "" {
 		contextPath := server.ContextPath
@@ -117,7 +134,7 @@ func (ac *AuthClient) login(server constant.ServerConfig) (bool, error) {
 			server.Scheme = "http"
 		}
 
-		reqUrl := server.Scheme + "://" + server.IpAddr + ":" + strconv.FormatInt(int64(server.Port), 10) + contextPath + "/v1/auth/users/login"
+		reqUrl := server.Scheme + "://" + fixIPv6Host(server.IpAddr) + ":" + strconv.FormatInt(int64(server.Port), 10) + contextPath + "/v1/auth/users/login"
 
 		header := http.Header{
 			"content-type": []string{"application/x-www-form-urlencoded"},
