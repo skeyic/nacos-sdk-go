@@ -92,6 +92,14 @@ func (br *BeatReactor) RemoveBeatInfo(serviceName string, ip string, port uint64
 	br.beatMap.Remove(k)
 }
 
+var (
+	lastBeat time.Time
+)
+
+func GetLastBeatTime() time.Time {
+	return lastBeat
+}
+
 func (br *BeatReactor) sendInstanceBeat(k string, beatInfo *model.BeatInfo) {
 	for {
 		err := br.beatThreadSemaphore.Acquire(ctx, 1)
@@ -115,6 +123,8 @@ func (br *BeatReactor) sendInstanceBeat(k string, beatInfo *model.BeatInfo) {
 			<-t.C
 			continue
 		}
+		lastBeat = time.Now()
+		logger.Infof("last beat time: %s", lastBeat.Format("2006-01-02 15:04:05"))
 		if beatInterval > 0 {
 			beatInfo.Period = time.Duration(time.Millisecond.Nanoseconds() * beatInterval)
 		}
